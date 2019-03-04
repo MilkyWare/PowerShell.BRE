@@ -24,26 +24,6 @@ Process {
             }
         }
     }
-
-    function Get-Vocabulary {
-        [CmdletBinding()]
-        Param (
-            [Parameter(Position=0, Mandatory=$true, ValueFromPipeline=$true)]
-            [string]$Name,
-            [Parameter()]
-            [version]$Version,
-            [Parameter()]
-            [string]$Output = "."
-        )
-        Process {
-            $vocabs = $ruleStore.GetVocabularies($Name, [Microsoft.RuleEngine.RuleStore+Filter]::All)
-            if ($PSBoundParameters.ContainsKey("Version")) {
-                $vocabs = $vocabs | Where-Object {($_.MajorRevision -eq $Version.Major) -and ($_.MinorRevision -eq $Version.Minor)}
-            }
-            Write-Verbose "Found $($vocabs.Count) vocabularies"
-            return $vocabs
-        }
-    }
     
     function Export-Vocabulary {
         [CmdletBinding()]
@@ -68,20 +48,37 @@ Process {
             }
         }
     }
-}
 
-function Remove-Vocabulary {
-    [CmdletBinding(SupportsShouldProcess=$true)]
-    Param (
-        [Parameter(Position=0, Mandatory=$true, ValueFromPipeline=$true)]
-        [string]$Name,
-        [Parameter(Position=1)]
-        [version]$Version
-    )
-    Process {
-        $vocabs = $ruleStore.GetVocabularies($Name, [Microsoft.RuleEngine.RuleStore+Filter]::All)
-        $vocabs = if ($PSBoundParameters.ContainsKey("Version")) {
-            $vocabs = $vocabs | Where-Object {$_.MajorRevision -eq $Version.Major }
+    function Get-Vocabulary {
+        [CmdletBinding()]
+        Param (
+            [Parameter(Position=0, Mandatory=$true, ValueFromPipeline=$true)]
+            [string]$Name,
+            [Parameter()]
+            [version]$Version,
+            [Parameter()]
+            [string]$Output = "."
+        )
+        Process {
+            $vocabs = $ruleStore.GetVocabularies($Name, [Microsoft.RuleEngine.RuleStore+Filter]::All)
+            if ($PSBoundParameters.ContainsKey("Version")) {
+                $vocabs = $vocabs | Where-Object {($_.MajorRevision -eq $Version.Major) -and ($_.MinorRevision -eq $Version.Minor)}
+            }
+            Write-Verbose "Found $($vocabs.Count) vocabularies"
+            return $vocabs
+        }
+    }
+
+    function Remove-Vocabulary {
+        [CmdletBinding(SupportsShouldProcess=$true)]
+        Param (
+            [Parameter(Position=0, Mandatory=$true, ValueFromPipeline=$true)]
+            [string]$Name,
+            [Parameter(Position=1)]
+            [version]$Version
+        )
+        Process {
+            $vocabs = Get-Vocabulary @PSBoundParameters
         }
     }
 }
