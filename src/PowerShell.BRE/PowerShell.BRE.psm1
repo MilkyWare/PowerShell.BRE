@@ -21,3 +21,19 @@ function Import-Policy {
         }
     }
 }
+
+function Remove-Vocabulary {
+    [CmdletBinding(SupportsShouldProcess=$true)]
+    Param (
+        [Parameter(Position=0, Mandatory=$true, ValueFromPipeline=$true)]
+        [string]$Name,
+        [Parameter(Position=1)]
+        [version]$Version
+    )
+    Process {
+        $vocabs = $ruleStore.GetVocabularies($Name, [Microsoft.RuleEngine.RuleStore+Filter]::All)
+        $vocabs = if ($PSBoundParameters.ContainsKey("Version")) {
+            $vocabs = $vocabs | Where-Object {$_.MajorRevision -eq $Version.Major }
+        }
+    }
+}
