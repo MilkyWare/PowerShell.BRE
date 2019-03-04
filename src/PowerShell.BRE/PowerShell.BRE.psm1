@@ -5,7 +5,7 @@ Process {
     $ruleStore = $driver.GetRuleStore()
     Write-Verbose "Connected to BRE store on $($ruleStore.Location)"
 
-    function Import-Policy {
+    function Import-Rule {
         [CmdletBinding()]
         Param (
             [Parameter(Position=0, Mandatory=$true, ValueFromPipeline=$true)]
@@ -29,38 +29,55 @@ Process {
         [CmdletBinding()]
         Param (
             [Parameter(Position=0, Mandatory=$true, ValueFromPipeline=$true)]
-            [string]$Name,
-            [Parameter()]
-            [version]$Version,
+            [Microsoft.RuleEngine.VocabularyInfo]$Vocabulary,
             [Parameter()]
             [string]$Output = "."
         )
         Process {
-            $vocabs = Get-Vocabulary @PSBoundParameters
+            $fileName = "$($Vocabulary.Name).$($Vocabulary.MajorRevision).$($Vocabulary.MinorRevision).xml"
+            Write-Debug "FileName = $fileName"
+            $filePath = Join-Path -Path $Output -ChildPath $fileName
+            Write-Debug "FilePath = $filePath"
+            Write-Output $filePath
+            $driver.ExportVocabularyToFileRuleStore($Vocabulary, $filePath)
+        }
+    }
 
-            foreach ($v in $vocabs) {
-                $fileName = "$($v.Name).$($v.MajorRevision).$($v.MinorRevision).xml"
-                Write-Debug "FileName = $fileName"
-                $filePath = Join-Path -Path $Output -ChildPath $fileName
-                Write-Debug "FilePath = $filePath"
-                Write-Output $filePath
-                $driver.ExportVocabularyToFileRuleStore($v, $filePath)
+    function Get-Rule {
+        [CmdletBinding()]
+        Param (
+            [Parameter(Position=0, ValueFromPipeline=$true)]
+            [string]$Name,
+            [Parameter()]
+            [version]$Version
+        )
+        Process {
+            $rules = if ($PSBoundParameters.ContainsKey("Name")) {
+                $ruleStore.GetRuleSets($Name, [Microsoft.RuleEngine.RuleStore+Filter]::All)
             }
+            else {
+                $ruleStore.GetRuleSets([Microsoft.RuleEngine.RuleStore+Filter]::All)
+            }
+            Write-Verbose "Found $($rules.Count) rules"
+            return $rules
         }
     }
 
     function Get-Vocabulary {
         [CmdletBinding()]
         Param (
-            [Parameter(Position=0, Mandatory=$true, ValueFromPipeline=$true)]
+            [Parameter(Position=0, ValueFromPipeline=$true)]
             [string]$Name,
             [Parameter()]
-            [version]$Version,
-            [Parameter()]
-            [string]$Output = "."
+            [version]$Version
         )
         Process {
-            $vocabs = $ruleStore.GetVocabularies($Name, [Microsoft.RuleEngine.RuleStore+Filter]::All)
+            $vocabs = if ($PSBoundParameters.ContainsKey("Name")) {
+                $ruleStore.GetVocabularies($Name, [Microsoft.RuleEngine.RuleStore+Filter]::All)
+            } 
+            else {
+                $ruleStore.GetVocabularies([Microsoft.RuleEngine.RuleStore+Filter]::All)
+            }
             if ($PSBoundParameters.ContainsKey("Version")) {
                 $vocabs = $vocabs | Where-Object {($_.MajorRevision -eq $Version.Major) -and ($_.MinorRevision -eq $Version.Minor)}
             }
@@ -73,12 +90,15 @@ Process {
         [CmdletBinding(SupportsShouldProcess=$true)]
         Param (
             [Parameter(Position=0, Mandatory=$true, ValueFromPipeline=$true)]
-            [string]$Name,
-            [Parameter(Position=1)]
-            [version]$Version
+            [Microsoft.RuleEngine.VocabularyInfo]$Vocabulary
         )
         Process {
-            $vocabs = Get-Vocabulary @PSBoundParameters
+            $dependantRules = $ruleStore.GetDependentRuleSets($Vocabulary)
+            if ($dependantRules.Count -gt 0) {
+                Write-Warning "Dependant rules found: $($dependantRules.Count)"
+                Write-Debug ($dependantRules | Out-String)
+            }
+            $ruleStore.Remove($Vocabulary)
         }
     }
 }
