@@ -82,11 +82,11 @@ process {
                 }
             }
 
-            Write-Verbose "Importing XML policy(s)"
+            Write-Verbose "Publishing XML policy(s)"
             $driver.ImportAndPublishFileRuleStore($Path.FullName)
             if ($Deploy) {
-                Write-Verbose "Deploying Policy"
                 foreach ($p in $policies) {
+                    Write-Verbose "Deploying policy: $($p.Name) v$($p.MajorRevision).$($p.MinorRevision)"
                     Write-Debug ($p | Out-String)
                     $driver.Deploy($p)
                 }
