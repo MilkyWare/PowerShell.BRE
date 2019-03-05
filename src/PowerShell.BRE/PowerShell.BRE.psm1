@@ -162,6 +162,19 @@ process {
         }
     }
 
+    function Import-Vocabulary {
+        [CmdletBinding()]
+        param (
+            [Parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
+            [ValidateScript({$_.Exists})]
+            [System.IO.FileInfo]$Path,
+            [Parameter()]
+            [switch]$Force
+        )
+        process {
+        }
+    }
+
     function Remove-Vocabulary {
         [CmdletBinding(SupportsShouldprocess = $true)]
         param (
