@@ -176,7 +176,7 @@ process {
     }
 
     function Remove-Vocabulary {
-        [CmdletBinding(SupportsShouldprocess = $true)]
+        [CmdletBinding(SupportsShouldProcess = $true)]
         param (
             [Parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
             [Microsoft.RuleEngine.VocabularyInfo]$Vocabulary
@@ -187,7 +187,9 @@ process {
                 Write-Warning "Dependant rules found: $($dependantRules.Count)"
                 Write-Debug ($dependantRules | Out-String)
             }
-            $ruleStore.Remove($Vocabulary)
+            if ($PSCmdlet.ShouldProcess($Vocabulary, "Removing vocabulary")) {
+                $ruleStore.Remove($Vocabulary)
+            }
         }
     }
     #endregion
