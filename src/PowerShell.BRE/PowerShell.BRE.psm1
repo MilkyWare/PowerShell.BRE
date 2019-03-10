@@ -54,7 +54,7 @@ process {
     }
 
     function Import-Policy {
-        [CmdletBinding()]
+        [CmdletBinding(SupportsShouldProcess=$true)]
         param (
             [Parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
             [ValidateScript({$_.Exists})]
@@ -69,6 +69,7 @@ process {
             [xml]$policyXml = Get-Content -Path $Path.FullName
             [System.Collections.Generic.List[Microsoft.RuleEngine.RuleSetInfo]]$policies = [System.Collections.Generic.List[Microsoft.RuleEngine.RuleSetInfo]]::new()
             foreach ($p in $policyXml.brl.ruleset) {
+                Write-Verbose "Processing policy: $($p.name) $($p.version.major).$($p.version.minor)"
                 $policies.Add([Microsoft.RuleEngine.RuleSetInfo]::new($p.name, $p.version.major, $p.version.minor))
 
                 $policy = Get-Policy -Name $p.name -Version ([version]::new($p.version.major, $p.version.minor))
@@ -111,7 +112,7 @@ process {
                 }
             }
             if ($Delete) {
-                if ($PSCmdlet.ShouldProcess($Policy, "Deleting policy")) {
+                if ($PSCmdlet.ShouldProcess(($Policy | Out-String), "Deleting policy")) {
                     $ruleStore.Remove($Policy)
                     Write-Verbose "Deleted policy"
                 }
@@ -163,7 +164,7 @@ process {
     }
 
     function Import-Vocabulary {
-        [CmdletBinding()]
+        [CmdletBinding(SupportsShouldProcess = $true)]
         param (
             [Parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
             [ValidateScript({$_.Exists})]
@@ -172,6 +173,25 @@ process {
             [switch]$Force
         )
         process {
+            Write-Verbose "Reading XML"
+            [xml]$vocabXml = Get-Content -Path $Path.FullName
+            [System.Collections.Generic.List[Microsoft.RuleEngine.VocabularyInfo]]$vocabs = [System.Collections.Generic.List[Microsoft.RuleEngine.VocabularyInfo]]::new()
+            foreach ($v in $vocabXml.brl.vocabulary) {
+                Write-Verbose "Processing vocabulary: $($v.name) $($v.version.major).$($v.version.minor)"
+                $vocabs.Add([Microsoft.RuleEngine.VocabularyInfo]::new($v.name, $v.version.major, $v.version.minor))
+
+                $vocab = Get-Vocabulary -Name $v.name -Version ([version]::new($v.version.major, $v.version.minor))
+                if ($vocab) {
+                    Write-Warning "Vocabulary already deployed"
+                    Write-Debug ($vocab | Out-String)
+                    Remove-Vocabulary -Vocabulary $vocab
+                }
+            }
+
+            Write-Verbose "Publishing XML vocabulary(s)"
+            if ($PSCmdlet.ShouldProcess($Path.FullName, "Published vocaulary(s)")) {
+                $driver.ImportAndPublishFileRuleStore($Path.FullName)
+            }
         }
     }
 
@@ -179,7 +199,9 @@ process {
         [CmdletBinding(SupportsShouldprocess = $true)]
         param (
             [Parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
-            [Microsoft.RuleEngine.VocabularyInfo]$Vocabulary
+            [Microsoft.RuleEngine.VocabularyInfo]$Vocabulary,
+            [Parameter()]
+            [switch]$Force
         )
         process {
             $dependantRules = $ruleStore.GetDependentRuleSets($Vocabulary)
@@ -187,8 +209,26 @@ process {
                 Write-Warning "Dependant rules found: $($dependantRules.Count)"
                 Write-Debug ($dependantRules | Out-String)
             }
-            $ruleStore.Remove($Vocabulary)
+            if ($PSCmdlet.ShouldProcess(($Vocabulary | Out-String), "Removing vocabulary")) {
+                $ruleStore.Remove($Vocabulary)
+            }
         }
     }
     #endregion
+
+    function Private:SplitExport {
+        [CmdletBinding()]
+        param (
+            [Parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
+            [ValidateScript({$_.Exists})]
+            [System.IO.FileInfo]$Path,
+            [Parameter(Position = 1, Mandatory = $true)]
+            [ValidateSet("Policy", "Vocabulary")]
+            [string]$Type
+        )
+        process {
+            Write-Verbose "Reading XML"
+            [xml]$xml = Get-Content -Path $Path.FullName
+        }
+    }
 }
