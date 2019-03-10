@@ -196,7 +196,7 @@ process {
     }
 
     function Remove-Vocabulary {
-        [CmdletBinding(SupportsShouldprocess = $true)]
+        [CmdletBinding(SupportsShouldProcess = $true)]
         param (
             [Parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
             [Microsoft.RuleEngine.VocabularyInfo]$Vocabulary,
