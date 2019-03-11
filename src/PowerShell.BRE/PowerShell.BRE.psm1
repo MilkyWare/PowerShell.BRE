@@ -177,7 +177,9 @@ process {
             [ValidateScript({$_.Exists})]
             [System.IO.FileInfo]$Path,
             [Parameter()]
-            [switch]$Force
+            [switch]$Force,
+            [Parameter()]
+            [switch]$CleanUp
         )
         process {
             Write-Verbose "Reading XML"
