@@ -176,6 +176,7 @@ process {
             Write-Verbose "Reading XML"
             [xml]$vocabXml = Get-Content -Path $Path.FullName
             [System.Collections.Generic.List[Microsoft.RuleEngine.VocabularyInfo]]$vocabs = [System.Collections.Generic.List[Microsoft.RuleEngine.VocabularyInfo]]::new()
+            [System.Collections.Generic.Stack[string]]$dependantPolicies = [System.Collections.Generic.List[string]]::new()
             foreach ($v in $vocabXml.brl.vocabulary) {
                 Write-Verbose "Processing vocabulary: $($v.name) $($v.version.major).$($v.version.minor)"
                 $vocabs.Add([Microsoft.RuleEngine.VocabularyInfo]::new($v.name, $v.version.major, $v.version.minor))
@@ -184,6 +185,19 @@ process {
                 if ($vocab) {
                     Write-Warning "Vocabulary already deployed"
                     Write-Debug ($vocab | Out-String)
+
+                    Write-Verbose "Checking for dependencies"
+                    $policies = $ruleStore.GetDependentRuleSets($vocab)
+                    if ($policies) {
+                        Write-Verbose "Found $($policies.Count) dependant policies"
+                        
+                        foreach ($p in $policies) {
+                            $policyExport = Export-Policy -Policy $p -Output $env:TEMP
+                            $dependantPolicies.Push($policyExport)
+                            Remove-Policy -Policy $p -Delete
+                        }
+                    }
+
                     Remove-Vocabulary -Vocabulary $vocab
                 }
             }
@@ -191,6 +205,13 @@ process {
             Write-Verbose "Publishing XML vocabulary(s)"
             if ($PSCmdlet.ShouldProcess($Path.FullName, "Published vocaulary(s)")) {
                 $driver.ImportAndPublishFileRuleStore($Path.FullName)
+            }
+
+            if ($dependantPolicies.Count -gt 0) {
+                Write-Verbose "Restoring dependant policy(s)"
+                while ($dependantPolicies -gt 0) {
+                    Import-Policy -Path $dependantPolicies.Pop() -Deploy
+                }
             }
         }
     }
