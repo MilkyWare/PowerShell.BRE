@@ -15,11 +15,11 @@ process {
             [string]$Output = "."
         )
         process {
-            $fileName = "$($Policy.Name).$($Policy.MajorRevision).$($Policy.MinorRevision).xml"
+            $fileName = "$(New-Guid)_$($Policy.Name).$($Policy.MajorRevision).$($Policy.MinorRevision).xml"
             Write-Debug "FileName = $fileName"
             $filePath = Join-Path -Path $Output -ChildPath $fileName
             Write-Debug "FilePath = $filePath"
-            $driver.ExportRuleSetToFileRuleStore($Rule, $filePath)
+            $driver.ExportRuleSetToFileRuleStore($Policy, $filePath)
             Write-Output $filePath
         }
     }
@@ -131,7 +131,7 @@ process {
             [string]$Output = "."
         )
         process {
-            $fileName = "$($Vocabulary.Name).$($Vocabulary.MajorRevision).$($Vocabulary.MinorRevision).xml"
+            $fileName = "$(New-Guid)_$($Vocabulary.Name).$($Vocabulary.MajorRevision).$($Vocabulary.MinorRevision).xml"
             Write-Debug "FileName = $fileName"
             $filePath = Join-Path -Path $Output -ChildPath $fileName
             Write-Debug "FilePath = $filePath"
