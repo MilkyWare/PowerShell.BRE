@@ -6,6 +6,14 @@ process {
     Write-Verbose "Connected to BRE store on $($ruleStore.Location)"
 
     #region Policies
+    function Clear-Policies {
+        [CmdletBinding(SupportsShouldProcess = $true)]
+        param ()
+        process {
+            Get-Policy | Remove-Policy -Delete
+        }
+    }
+
     function Export-Policy {
         [CmdletBinding()]
         param (
@@ -54,10 +62,10 @@ process {
     }
 
     function Import-Policy {
-        [CmdletBinding(SupportsShouldProcess=$true)]
+        [CmdletBinding(SupportsShouldProcess = $true)]
         param (
             [Parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
-            [ValidateScript({$_.Exists})]
+            [ValidateScript( {$_.Exists})]
             [System.IO.FileInfo]$Path,
             [Parameter()]
             [switch]$Deploy,
@@ -96,7 +104,7 @@ process {
     }
 
     function Remove-Policy {
-        [CmdletBinding(SupportsShouldProcess=$true)]
+        [CmdletBinding(SupportsShouldProcess = $true)]
         param (
             [Parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
             [Microsoft.RuleEngine.RuleSetInfo]$Policy,
@@ -122,6 +130,16 @@ process {
     #endregion
     
     #region Vocabularies
+    function Clear-Vocabularies {
+        [CmdletBinding(SupportsShouldProcess = $true)]
+        param ()        
+        process {
+            if ($PSCmdlet.ShouldProcess()) {
+                Get-Vocabulary | Remove-Vocabulary -Force
+            }
+        }
+    }
+
     function Export-Vocabulary {
         [CmdletBinding()]
         param (
@@ -164,6 +182,23 @@ process {
     }
 
     function Import-Vocabulary {
+        <#
+        .SYNOPSIS
+            Import an exported BRE vocabulary XML file into the rule store
+        .DESCRIPTION
+            Imports exported BRE vocabulary whilst handling pre-exisitng vocabularies as well as policies that reference those. 
+            
+            A list of policies is taken from the XML and used to query the rule store. If vocabularies already exist, a list of dependant policies is retrieved and exported before deleting. Once the dependencies are removed, the XML vocabularies are imported and the dependencies restored.
+        .EXAMPLE
+            PS C:\> Import-BREVocabulary -Path C:\Temp\0d54dc5b-e73e-4936-a751-6df7fb5f39f5_Vocab1.1.0.xml
+            Imports specified BRE vocabulary XML
+        .INPUTS
+            Inputs (if any)
+        .OUTPUTS
+            Output (if any)
+        .NOTES
+            General notes
+        #>
         [CmdletBinding(SupportsShouldProcess = $true)]
         param (
             [Parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
@@ -236,20 +271,4 @@ process {
         }
     }
     #endregion
-
-    function Private:SplitExport {
-        [CmdletBinding()]
-        param (
-            [Parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
-            [ValidateScript({$_.Exists})]
-            [System.IO.FileInfo]$Path,
-            [Parameter(Position = 1, Mandatory = $true)]
-            [ValidateSet("Policy", "Vocabulary")]
-            [string]$Type
-        )
-        process {
-            Write-Verbose "Reading XML"
-            [xml]$xml = Get-Content -Path $Path.FullName
-        }
-    }
 }
