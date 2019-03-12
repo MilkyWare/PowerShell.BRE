@@ -70,7 +70,9 @@ process {
             [Parameter()]
             [switch]$Deploy,
             [Parameter()]
-            [switch]$Force
+            [switch]$Force,
+            [Parameter()]
+            [switch]$CleanUp
         )
         process {
             Write-Verbose "Reading XML"
@@ -99,6 +101,11 @@ process {
                     Write-Debug ($p | Out-String)
                     $driver.Deploy($p)
                 }
+            }
+
+            if ($CleanUp) {
+                Write-Verbose "Removing XML"
+                Remove-Item -Path $Path.FullName -Force
             }
         }
     }
@@ -205,7 +212,9 @@ process {
             [ValidateScript({$_.Exists})]
             [System.IO.FileInfo]$Path,
             [Parameter()]
-            [switch]$Force
+            [switch]$Force,
+            [Parameter()]
+            [switch]$CleanUp
         )
         process {
             Write-Verbose "Reading XML"
@@ -247,6 +256,11 @@ process {
                 while ($dependantPolicies -gt 0) {
                     Import-Policy -Path $dependantPolicies.Pop() -Deploy
                 }
+            }
+
+            if ($CleanUp) {
+                Write-Verbose "Removing XML"
+                Remove-Item -Path $Path.FullName -Force
             }
         }
     }
