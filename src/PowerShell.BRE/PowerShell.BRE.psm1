@@ -14,24 +14,64 @@ process {
         }
     }
 
+    <#
+    .SYNOPSIS
+        Exports specified policy to file. The policies can be specified explicity or passed via the pipeline. These will be exported by default too the current folder, be can be changed and will be exported in the format Guid_Name.MajorVersion.MinorVersion.xml. FileInfo objects are returned for each exported policy.
+    .EXAMPLE
+        PS C:\> Export-Policy -Policy $policy
+        Exports policy in variable to current folder
+    .EXAMPLE
+        PS C:\> Export-Policy -Policy $policy -OutPut D:\Temp
+        Exports policy in variable to specified folder
+    .EXAMPLE
+        PS C:\> Get-Policy | Export-Policy
+        Gets all BRE policies and exports each to the current folder
+    .PARAMETER Policy
+        Policy to be exported
+    .PARAMETER Output
+        Directory for the policy to be exported to. Default is current folder
+    #>
     function Export-Policy {
         [CmdletBinding()]
         param (
             [Parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
             [Microsoft.RuleEngine.RuleSetInfo]$Policy,
             [Parameter()]
-            [string]$Output = "."
+            [System.IO.DirectoryInfo]$Output = "."
         )
         process {
             $fileName = "$(New-Guid)_$($Policy.Name).$($Policy.MajorRevision).$($Policy.MinorRevision).xml"
             Write-Debug "FileName = $fileName"
             $filePath = Join-Path -Path $Output -ChildPath $fileName
+
+            if (-not $Output.Exists) {
+                Write-Verbose "Creating output directory"
+                New-Item -Path $Output.FullName -ItemType Directory -Force
+            }
+
             Write-Debug "FilePath = $filePath"
             $driver.ExportRuleSetToFileRuleStore($Policy, $filePath)
-            Write-Output $filePath
+            Write-Output ([System.IO.FileInfo]::new($filePath))
         }
     }
 
+    <#
+    .SYNOPSIS
+        Searches BRE for policies matching specified parameters. Calling with no paramters will return all BRE polcies, where specifying the name and/or version will filter this list
+    .EXAMPLE
+        PS C:\> Get-Policy
+        Returns all BRE policies
+    .EXAMPLE
+        PS C:\> Get-Policy -Name Test
+        Returns all versions of the BRE policy "Test"
+    .EXAMPLE
+        PS C:\> Get-Policy -Name -Version 1.0
+        Returns version "1.0" of the BRE policy "Test"
+    .PARAMETER Name
+        Name of the BRE policy to filter on
+    .PARAMETER Version
+        Version of the BRE policy to filter on
+    #>
     function Get-Policy {
         [CmdletBinding()]
         param (
@@ -147,24 +187,64 @@ process {
         }
     }
 
+    <#
+    .SYNOPSIS
+        Exports specified vocabulary to file. The vocabularies can be specified explicity or passed via the pipeline. These will be exported by default too the current folder, be can be changed and will be exported in the format Guid_Name.MajorVersion.MinorVersion.xml. FileInfo objects are returned for each exported vocabulary.
+    .EXAMPLE
+        PS C:\> Export-Vocabulary -Vocabulary $vocabulary
+        Exports vocabulary in variable to current folder
+    .EXAMPLE
+        PS C:\> Export-Vocabulary -Vocabulary $vocabulary -OutPut D:\Temp
+        Exports vocabulary in variable to specified folder
+    .EXAMPLE
+        PS C:\> Get-Vocabulary | Export-Vocabulary
+        Gets all BRE vocabularies and exports each to the current folder
+    .PARAMETER Vocabulary
+        Vocabulary to be exported
+    .PARAMETER Output
+        Directory for the vocabulary to be exported to. Default is current folder
+    #>
     function Export-Vocabulary {
         [CmdletBinding()]
         param (
             [Parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
             [Microsoft.RuleEngine.VocabularyInfo]$Vocabulary,
             [Parameter()]
-            [string]$Output = "."
+            [System.IO.DirectoryInfo]$Output = "."
         )
         process {
             $fileName = "$(New-Guid)_$($Vocabulary.Name).$($Vocabulary.MajorRevision).$($Vocabulary.MinorRevision).xml"
             Write-Debug "FileName = $fileName"
             $filePath = Join-Path -Path $Output -ChildPath $fileName
+
+            if (-not $Output.Exists) {
+                Write-Verbose "Creating output directory"
+                New-Item -Path $Output.FullName -ItemType Directory -Force
+            }
+
             Write-Debug "FilePath = $filePath"
             $driver.ExportVocabularyToFileRuleStore($Vocabulary, $filePath)
-            Write-Output $filePath
+            Write-Output ([System.IO.FileInfo]::new($filePath))
         }
     }
 
+    <#
+    .SYNOPSIS
+        Searches BRE for vocabularies matching specified parameters. Calling with no paramters will return all BRE vocaularies, where specifying the name and/or version will filter this list
+    .EXAMPLE
+        PS C:\> Get-Vocabulary
+        Returns all BRE vocabularies
+    .EXAMPLE
+        PS C:\> Get-Vocabulary -Name Test
+        Returns all versions of the BRE vocabulary "Test"
+    .EXAMPLE
+        PS C:\> Get-Vocabulary -Name -Version 1.0
+        Returns version "1.0" of the BRE vocabulary "Test"
+    .PARAMETER Name
+        Name of the BRE vocabulary to filter on
+    .PARAMETER Version
+        Version of the BRE vocabulary to filter on
+    #>
     function Get-Vocabulary {
         [CmdletBinding()]
         param (
