@@ -268,24 +268,24 @@ process {
         }
     }
 
+    <#
+    .SYNOPSIS
+        Import an exported BRE vocabulary XML file into the rule store
+    .DESCRIPTION
+        Imports exported BRE vocabulary whilst handling pre-exisitng vocabularies as well as policies that reference those. 
+        
+        A list of policies is taken from the XML and used to query the rule store. If vocabularies already exist, a list of dependant policies is retrieved and exported before deleting. Once the dependencies are removed, the XML vocabularies are imported and the dependencies restored.
+    .EXAMPLE
+        PS C:\> Import-BREVocabulary -Path C:\Temp\0d54dc5b-e73e-4936-a751-6df7fb5f39f5_Vocab1.1.0.xml
+        Imports specified BRE vocabulary XML
+    .INPUTS
+        Inputs (if any)
+    .OUTPUTS
+        Output (if any)
+    .NOTES
+        General notes
+    #>
     function Import-Vocabulary {
-        <#
-        .SYNOPSIS
-            Import an exported BRE vocabulary XML file into the rule store
-        .DESCRIPTION
-            Imports exported BRE vocabulary whilst handling pre-exisitng vocabularies as well as policies that reference those. 
-            
-            A list of policies is taken from the XML and used to query the rule store. If vocabularies already exist, a list of dependant policies is retrieved and exported before deleting. Once the dependencies are removed, the XML vocabularies are imported and the dependencies restored.
-        .EXAMPLE
-            PS C:\> Import-BREVocabulary -Path C:\Temp\0d54dc5b-e73e-4936-a751-6df7fb5f39f5_Vocab1.1.0.xml
-            Imports specified BRE vocabulary XML
-        .INPUTS
-            Inputs (if any)
-        .OUTPUTS
-            Output (if any)
-        .NOTES
-            General notes
-        #>
         [CmdletBinding(SupportsShouldProcess = $true)]
         param (
             [Parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
