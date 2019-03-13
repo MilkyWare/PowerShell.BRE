@@ -101,11 +101,35 @@ process {
         }
     }
 
+    <#
+    .SYNOPSIS
+        Imports and publishes XML BRE policy into the store and optionally deploys the policy. The source XML files can also be cleaned up (removed) once the policy has been imported. Force can also be specified to remove an existing policy of the same name and version as part of the process
+    .EXAMPLE
+        PS C:\> Import-Policy -Path C:\BREPolicies\Test.1.0.xml
+        Imports and publishes the policy "Test" version "1.0" into the BRE store
+    .EXAMPLE
+        PS C:\> Import-Policy -Path C:\BREPolicies\Test.1.0.xml -Deploy
+        Imports, publishes and deploys the policy "Test" version "1.0" into the BRE store
+    .EXAMPLE
+        PS C:\> Import-Policy -Path C:\BREPolicies\Test.1.0.xml -Deploy -Force
+        Imports, publishes and deploys the policy "Test" version "1.0" into the BRE store. If the policy already exists, it is removed to allow the new policy to be imported
+    .EXAMPLE
+        PS C:\> Import-Policy -Path C:\BREPolicies\Test.1.0.xml -CleanUp
+        Imports and publishes the policy "Test" version "1.0" into the BRE store. Once imported, the XML file is removed
+    .PARAMETER Path
+        Path to the policy XML to be imported
+    .PARAMETER Deploy
+        Publish and Deploy the policies
+    .PARAMETER Force
+        Toggle for whether existing policies are to be handled during the import
+    .PARAMETER CleanUp
+        Toggle whether the source XML is deleted once the import process is complete
+    #>
     function Import-Policy {
         [CmdletBinding(SupportsShouldProcess = $true)]
         param (
             [Parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
-            [ValidateScript( {$_.Exists})]
+            [ValidateScript({$_.Exists})]
             [System.IO.FileInfo]$Path,
             [Parameter()]
             [switch]$Deploy,
@@ -150,6 +174,23 @@ process {
         }
     }
 
+    <#
+    .SYNOPSIS
+        Removed the specified policy from the BRE store. Policy can either be specified explicitly and passed from a pipeline. The default behaviour is just to undeploy the policy, it can also optionally be deleted from the store entirely
+    .EXAMPLE
+        PS C:\> Remove-Policy -Policy $policy
+        Undeploys the specified policy from BRE
+    .EXAMPLE
+        PS C:\> Remove-Policy -Policy $policy -Delete
+        Undeploys and deletes the specified policy from BRE
+    .EXAMPLE
+        PS C:\> Get-Policy | Remove-Policy
+        Undeploys policies from the pipeline
+    .PARAMETER Policy
+        Policy to be removed
+    .PARAMETER Delete
+        Use to delete the policy from BRE instead of just undeploying
+    #>
     function Remove-Policy {
         [CmdletBinding(SupportsShouldProcess = $true)]
         param (
@@ -270,20 +311,24 @@ process {
 
     <#
     .SYNOPSIS
-        Import an exported BRE vocabulary XML file into the rule store
-    .DESCRIPTION
-        Imports exported BRE vocabulary whilst handling pre-exisitng vocabularies as well as policies that reference those. 
+        Imports an exported BRE vocabulary whilst handling pre-exisitng vocabularies as well as policies that reference those. 
         
         A list of policies is taken from the XML and used to query the rule store. If vocabularies already exist, a list of dependant policies is retrieved and exported before deleting. Once the dependencies are removed, the XML vocabularies are imported and the dependencies restored.
     .EXAMPLE
-        PS C:\> Import-BREVocabulary -Path C:\Temp\0d54dc5b-e73e-4936-a751-6df7fb5f39f5_Vocab1.1.0.xml
+        PS C:\> Import-Vocabulary -Path C:\Temp\0d54dc5b-e73e-4936-a751-6df7fb5f39f5_Vocab1.1.0.xml
         Imports specified BRE vocabulary XML
-    .INPUTS
-        Inputs (if any)
-    .OUTPUTS
-        Output (if any)
-    .NOTES
-        General notes
+    .EXAMPLE
+        PS C:\> Import-Vocabulary -Path C:\BREPolicies\Test.1.0.xml -CleanUp
+        Imports and publishes the vocabulary "Test" version "1.0" into the BRE store. Once imported, the XML file is removed
+    .EXAMPLE 
+        PS C:\> Import-Vocabulary -Path C:\BREPolicies\Test.1.0.xml -Force
+        Imports and publishes the vocabulary "Test" version "1.0" into the BRE store. Each vocabulary in the XML is looked up in the store. If the vocabulary already exists the dependencies are backed up and restored once the vocabularies have been imported
+    .PARAMETER Path
+        Path to the vocabulary XML to be imported
+    .PARAMETER Force
+        Toggle for whether dependent policies are to be handled during the import
+    .PARAMETER CleanUp
+        Toggle whether the source XML is deleted once the import process is complete
     #>
     function Import-Vocabulary {
         [CmdletBinding(SupportsShouldProcess = $true)]
@@ -345,6 +390,24 @@ process {
         }
     }
 
+
+    <#
+    .SYNOPSIS
+        Removed the specified vocabulary from the BRE store. Vocabulary can either be specified explicitly and passed from a pipeline. The default behaviour is just to undeploy the vocabulary, it can also optionally be deleted from the store entirely
+    .EXAMPLE
+        PS C:\> Remove-Vocabulary -Vocabulary $vocabulary
+        Undeploys the specified vocabulary from BRE
+    .EXAMPLE
+        PS C:\> Remove-Vocabulary -Vocabulary $vocabulary -Delete
+        Undeploys and deletes the specified vocabulary from BRE
+    .EXAMPLE
+        PS C:\> Get-Vocabulary | Remove-Vocabulary
+        Undeploys policies from the pipeline
+    .PARAMETER Vocabulary
+        Vocabulary to be removed
+    .PARAMETER Force
+        Use to remove all dependent policies to allow the Vocabulary to be removed cleanly
+    #>
     function Remove-Vocabulary {
         [CmdletBinding(SupportsShouldProcess = $true)]
         param (
@@ -358,7 +421,9 @@ process {
             if ($dependantRules.Count -gt 0) {
                 Write-Warning "Dependant rules found: $($dependantRules.Count)"
                 Write-Debug ($dependantRules | Out-String)
+                $dependantRules | Remove-Policy -Delete
             }
+
             if ($PSCmdlet.ShouldProcess(($Vocabulary | Out-String), "Removing vocabulary")) {
                 $ruleStore.Remove($Vocabulary)
             }
