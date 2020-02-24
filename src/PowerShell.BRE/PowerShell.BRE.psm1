@@ -1,5 +1,10 @@
-#Requires -Assembly 'Microsoft.RuleEngine'
-#Requires -Assembly 'Microsoft.BizTalk.RuleEngineExtensions'
+#Requires -RunAsAdministrator
+#Requires -PSEdition Desktop
+#Requires -Assembly 'Microsoft.RuleEngine' -Version "3.0.1.0"
+#Requires -Assembly 'Microsoft.BizTalk.RuleEngineExtensions' -Version "3.0.1.0"
+
+[System.Reflection.Assembly]::LoadWithPartialName("Microsoft.RuleEngine")
+[System.Reflection.Assembly]::LoadWithPartialName("Microsoft.BizTalk.RuleEngineExtensions")
 
 $driver = [Microsoft.BizTalk.RuleEngineExtensions.RuleSetDeploymentDriver]::new()
 $ruleStore = $driver.GetRuleStore()
