@@ -1,12 +1,15 @@
 #Requires -RunAsAdministrator
 #Requires -PSEdition Desktop
 
-try {
-    [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.RuleEngine")
-    [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.BizTalk.RuleEngineExtensions")
+$breAssembly = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.RuleEngine")
+if (-not $breAssembly)
+{
+    throw [System.ApplicationException]::new("Failed to load Microsoft.RuleEngine")
 }
-catch {
-    throw $Error[0]
+$extensionsAssebmly = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.BizTalk.RuleEngineExtensions")
+if (-not $extensionsAssebmly)
+{
+    throw [System.ApplicationException]::new("Failed to load Microsoft.RuleEngine")
 }
 
 $driver = [Microsoft.BizTalk.RuleEngineExtensions.RuleSetDeploymentDriver]::new()
