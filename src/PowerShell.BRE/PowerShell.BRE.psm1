@@ -1,7 +1,13 @@
 #Requires -RunAsAdministrator
 #Requires -PSEdition Desktop
-#Requires -Assembly 'Microsoft.RuleEngine, Version=3.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, ProcessorArchitecture=msil'
-#Requires -Assembly 'Microsoft.BizTalk.RuleEngineExtensions, Version=3.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, ProcessorArchitecture=msil'
+
+try {
+    [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.RuleEngine")
+    [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.BizTalk.RuleEngineExtensions")
+}
+catch {
+    throw $Error[0]
+}
 
 $driver = [Microsoft.BizTalk.RuleEngineExtensions.RuleSetDeploymentDriver]::new()
 $ruleStore = $driver.GetRuleStore()
