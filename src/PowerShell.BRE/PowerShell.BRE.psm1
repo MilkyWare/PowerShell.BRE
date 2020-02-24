@@ -98,19 +98,11 @@ function Get-Policy
         if (-not $PSBoundParameters.ContainsKey("Version"))
         {
             Write-Verbose "Looking for policy: $Name"
-<<<<<<< HEAD
         }
         else
         {
             Write-Verbose "Looking for policy: $Name v$($version.ToString())"
         }
-=======
-        }
-        else
-        {
-            Write-Verbose "Looking for policy: $Name v$($version.ToString())"
-        }
->>>>>>> 0b27a9188914888588cf9398252b3fac9257512f
         $policies = if ($PSBoundParameters.ContainsKey("Name"))
         {
             $ruleStore.GetRuleSets($Name, [Microsoft.RuleEngine.RuleStore+Filter]::All)
